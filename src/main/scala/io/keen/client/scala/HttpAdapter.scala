@@ -46,7 +46,7 @@ class HttpAdapter() extends Logging {
     val finalUrl = Uri(
       scheme = scheme,
       authority = Authority(host = Host(authority)),
-      path = Path(path),
+      path = Path("/" + path),
       query = Query(filteredParams)
     )
 
