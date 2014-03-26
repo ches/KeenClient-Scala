@@ -25,9 +25,9 @@ class Client(
   config: Config = ConfigFactory.load(),
   scheme: String = "https",
   authority: String = "api.keen.io",
-  version: String = "3.0",
-  httpAdapter: HttpAdapter = new HttpAdapter()) extends Logging {
+  version: String = "3.0") extends HttpAdapterComponent with Logging {
 
+  val httpAdapter: HttpAdapter = new SprayHttpAdapter
   val settings = new Settings(config)
 
   /**
@@ -348,3 +348,4 @@ class Client(
     httpAdapter.shutdown
   }
 }
+

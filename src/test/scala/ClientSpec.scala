@@ -19,7 +19,7 @@ class ClientSpec extends Specification {
     var lastUrl: Option[String] = None
     var lastKey: Option[String] = None
 
-    override def doRequest(
+    def doRequest(
       scheme: String,
       authority: String,
       path: String,
@@ -56,6 +56,8 @@ class ClientSpec extends Specification {
     def getKey = lastKey
 
     def getUrl = lastUrl
+
+    def shutdown = {}
   }
 
   // Sequential because it's less work to share the client instance
@@ -63,7 +65,6 @@ class ClientSpec extends Specification {
 
   "Client" should {
 
-    val adapter = new OkHttpAdapter()
     val config = ConfigFactory.parseMap(
       Map(
         "keen.project-id" -> "abc",
@@ -72,7 +73,11 @@ class ClientSpec extends Specification {
         "keen.write-key" -> "writeKey"
       )
     )
-    val client = new Client(config = config, httpAdapter = adapter)
+    val client = new Client(config = config) {
+      override val httpAdapter = new OkHttpAdapter
+    }
+
+    val adapter = client.httpAdapter
 
     "handle 200" in {
       val res = Await.result(client.getProjects, Duration(5, "second"))

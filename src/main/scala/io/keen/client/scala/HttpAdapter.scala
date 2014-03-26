@@ -13,7 +13,24 @@ import spray.http.Uri._
 import spray.http.HttpHeaders.RawHeader
 import spray.httpx.RequestBuilding._
 
-class HttpAdapter() extends Logging {
+trait HttpAdapterComponent {
+  val httpAdapter: HttpAdapter
+}
+
+trait HttpAdapter {
+  def doRequest(
+    scheme: String,
+    authority: String,
+    path: String,
+    method: String,
+    key: String,
+    body: Option[String],
+    params: Map[String, Option[String]]): Future[Response]
+
+  def shutdown: Unit
+}
+
+class SprayHttpAdapter extends HttpAdapter with Logging {
 
   implicit val system = ActorSystem()
   import system.dispatcher // execution context for futures
