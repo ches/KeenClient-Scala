@@ -96,10 +96,10 @@ require it.
 
 ## Testing
 
-The test suite includes integration tests which require keys and access to Keen IO's
-API. You can skip them with:
-
-    test-only * -- exclude integration
-
 Unit tests can be run with the standard SBT `test`, `testQuick`, etc.
+
+The test suite includes integration tests which require keys and access to Keen IO's
+API. Once you have keys set in the environment as above, you can run the tests with:
+
+    $ sbt it:test
 

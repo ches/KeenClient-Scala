@@ -1,14 +1,14 @@
 package test
 
-import org.specs2.mutable.Specification
 import scala.concurrent.Await
 import scala.concurrent.duration._
+
+import org.specs2.mutable.Specification
+
 import io.keen.client.scala.Client
 
+
 class ClientIntegrationSpec extends Specification {
-
-  // args(exclude = "integration")
-
   sequential
 
   "Client" should {
@@ -163,5 +163,6 @@ class ClientIntegrationSpec extends Specification {
       client.shutdown
       1 must beEqualTo(1)
     }
-  } section("integration")
+  }
 }
+
