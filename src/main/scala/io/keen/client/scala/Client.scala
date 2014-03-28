@@ -256,8 +256,6 @@ class Client(
 
   /**
    * Returns schema information for all the event collections in this project. See [[https://keen.io/docs/api/reference/#event-resource Event Resource]].
-   *
-   * @param projectID The project to which the event will be added.
    */
   def getEvents: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
@@ -267,7 +265,6 @@ class Client(
   /**
    * Returns available schema information for this event collection, including properties and their type. It also returns links to sub-resources. See [[https://keen.io/docs/api/reference/#event-collection-resource Event Collection Resource]].
    *
-   * @param projectID The project to which the event will be added.
    * @param collection The name of the collection.
    */
   def getCollection(collection: String): Future[Response] = {
@@ -303,7 +300,6 @@ class Client(
 
   /**
    * Returns the list of available queries and links to them. See [[https://keen.io/docs/api/reference/#queries-resource Queries Resource]].
-   *
    */
   def getQueries: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "queries").mkString("/")
