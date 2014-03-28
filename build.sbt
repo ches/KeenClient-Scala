@@ -26,8 +26,11 @@ libraryDependencies += "io.spray" % "spray-can" % "1.2.0"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.2.4"
 
+libraryDependencies += "com.typesafe" % "config" % "1.2.0"
+
 libraryDependencies += "org.clapper" %% "grizzled-slf4j" % "1.0.1"
 
 libraryDependencies += "org.specs2" %% "specs2" % "2.3.7" % "test"
 
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.5" % "test"
+

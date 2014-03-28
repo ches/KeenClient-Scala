@@ -44,14 +44,40 @@ API. You can skip them with
 test-only * -- exclude integration
 ```
 
-## Environment Variables
+# Configuration
 
-You'll want to set the following environment variables:
+The client must be configured with API keys. The recommended means is through
+environment variables, to avoid storing credentials in source control. To that
+end, these will be used if set:
 
-* KEEN_PROJECT_ID
-* KEEN_MASTER_KEY
-* KEEN_WRITE_KEY
-* KEEN_READ_KEY
+* `KEEN_PROJECT_ID`
+* `KEEN_MASTER_KEY`
+* `KEEN_WRITE_KEY`
+* `KEEN_READ_KEY`
+
+However, configuration uses the [Typesafe config] library -- near-ubiquitous in
+the Scala ecosystem -- so you can use a config file if you must, or provide a
+custom [`Config`] object programmatically for advanced needs: just pass it to
+the client constructor:
+
+```scala
+import com.typesafe.config._
+import io.keen.client.scala.Client
+
+val client = new Client(config = myCustomConfigObject)
+```
+
+To configure with a file, it must be on the classpath -- see the Typesafe config
+documentation for naming and format details. See [our `reference.conf`] for
+namespace and keys.
+
+**Note**: Currently you must provide all the keys in configuration, even if you
+only want to use a client in a read-only fashion. This limitation will be
+removed in the future.
+
+[Typesafe config]: https://github.com/typesafehub/config
+[`Config`]: http://typesafehub.github.io/config/latest/api/com/typesafe/config/Config.html
+[our `reference.conf`]: https://github.com/keenlabs/KeenClient-Scala/tree/master/src/main/resources/reference.conf
 
 ## Example
 

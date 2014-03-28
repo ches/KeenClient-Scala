@@ -1,22 +1,34 @@
 package io.keen.client.scala
 
-import grizzled.slf4j.Logging
 import scala.concurrent.Future
-import java.nio.charset.StandardCharsets
+
+import com.typesafe.config._
+import grizzled.slf4j.Logging
 
 // XXX Remaining: Extraction, Funnel, Saved Queries List, Saved Queries Row, Saved Queries Row Result
 // Event deletion
 
+// TODO: We should allow some settings to be optional -- read-only clients, no
+// master operations allowed, etc. But we'd need to wrap return types in Try to
+// express error conditions that can happen before a request is even attempted.
+class Settings(config: Config) {
+  config.checkValid(ConfigFactory.defaultReference(), "keen")
+
+  val masterKey = config.getString("keen.master-key")
+  val projectId = config.getString("keen.project-id")
+  val readKey   = config.getString("keen.read-key")
+  val writeKey  = config.getString("keen.write-key")
+}
+
 // XXX These should probably be Options with handling for missing ones below.
 class Client(
+  config: Config = ConfigFactory.load(),
   scheme: String = "https",
   authority: String = "api.keen.io",
   version: String = "3.0",
-  projectId: String,
-  masterKey: String,
-  writeKey: String,
-  readKey: String,
   httpAdapter: HttpAdapter = new HttpAdapter()) extends Logging {
+
+  val settings = new Settings(config)
 
   /**
    * Publish a single event. See [[https://keen.io/docs/api/reference/#event-collection-resource Event Collection Resource]].
@@ -25,8 +37,8 @@ class Client(
    * @param event The event
    */
   def addEvent(collection: String, event: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "POST", key = writeKey, body = Some(event))
+    val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
+    doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(event))
   }
 
   /**
@@ -35,8 +47,8 @@ class Client(
    * @param events The events to add to the project.
    */
   def addEvents(events: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events").mkString("/")
-    doRequest(path = path, method = "POST", key = writeKey, body = Some(events))
+    val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
+    doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(events))
   }
 
   /**
@@ -230,16 +242,16 @@ class Client(
    * @param collection The name of the collection.
    */
   def deleteCollection(collection: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "DELETE", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
+    doRequest(path = path, method = "DELETE", key = settings.masterKey)
   }
 
   /**
    * Removes a property and deletes all values stored with that property name. See [[https://keen.io/docs/api/reference/#property-resource Property Resource]].
    */
   def deleteProperty(collection: String, name: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events", collection, "properties", name).mkString("/")
-    doRequest(path = path, method = "DELETE", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
+    doRequest(path = path, method = "DELETE", key = settings.masterKey)
   }
 
   /**
@@ -248,8 +260,8 @@ class Client(
    * @param projectID The project to which the event will be added.
    */
   def getEvents: Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events").mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -259,8 +271,8 @@ class Client(
    * @param collection The name of the collection.
    */
   def getCollection(collection: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -269,7 +281,7 @@ class Client(
    */
   def getProjects: Future[Response] = {
     val path = Seq(version, "projects").mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -277,16 +289,16 @@ class Client(
    * See [[https://keen.io/docs/api/reference/#project-row-resource Project Row Resource]].
    */
   def getProject: Future[Response] = {
-    val path = Seq(version, "projects", projectId).mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId).mkString("/")
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
    * Returns the property name, type, and a link to sub-resources. See [[https://keen.io/docs/api/reference/#property-resource Property Resource]].
    */
   def getProperty(collection: String, name: String): Future[Response] = {
-    val path = Seq(version, "projects", projectId, "events", collection, "properties", name).mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -294,8 +306,8 @@ class Client(
    *
    */
   def getQueries: Future[Response] = {
-    val path = Seq(version, "projects", projectId, "queries").mkString("/")
-    doRequest(path = path, method = "GET", key = masterKey)
+    val path = Seq(version, "projects", settings.projectId, "queries").mkString("/")
+    doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   private def doQuery(
@@ -307,7 +319,7 @@ class Client(
     timezone: Option[String] = None,
     groupBy: Option[String]= None): Future[Response] = {
 
-    val path = Seq(version, "projects", projectId, "queries", analysisType).mkString("/")
+    val path = Seq(version, "projects", settings.projectId, "queries", analysisType).mkString("/")
 
     val params = Map(
       "event_collection" -> Some(collection),
@@ -318,7 +330,7 @@ class Client(
       "group_by" -> groupBy
     )
 
-    doRequest(path = path, method = "GET", key = readKey, params = params)
+    doRequest(path = path, method = "GET", key = settings.readKey, params = params)
   }
 
   private def doRequest(

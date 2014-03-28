@@ -1,13 +1,16 @@
 package test
 
-import io.keen.client.scala._
-import java.nio.charset.StandardCharsets
-import org.specs2.mutable.Specification
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await,Future,Promise}
+import scala.concurrent.{Await, Future, Promise}
+
+import com.typesafe.config.ConfigFactory
+import org.specs2.mutable.Specification
 import spray.http.Uri
 import spray.http.Uri._
+
+import io.keen.client.scala._
 
 class ClientSpec extends Specification {
 
@@ -61,13 +64,15 @@ class ClientSpec extends Specification {
   "Client" should {
 
     val adapter = new OkHttpAdapter()
-    val client = new Client(
-      projectId = "abc",
-      masterKey = "masterKey",
-      writeKey = "writeKey",
-      readKey = "readKey",
-      httpAdapter = adapter
+    val config = ConfigFactory.parseMap(
+      Map(
+        "keen.project-id" -> "abc",
+        "keen.master-key" -> "masterKey",
+        "keen.read-key" -> "readKey",
+        "keen.write-key" -> "writeKey"
+      )
     )
+    val client = new Client(config = config, httpAdapter = adapter)
 
     "handle 200" in {
       val res = Await.result(client.getProjects, Duration(5, "second"))
