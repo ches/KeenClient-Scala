@@ -19,28 +19,34 @@ class ClientSpec extends Specification {
     var lastPath: Option[String] = None
     var lastKey: Option[String] = None
 
-    def doRequest(
-      path: String,
+    def delete(path: String, authKey: String, body: Body = None, params: Params = Map.empty): Future[Response] =
+      makeRequest("DELETE", path, authKey, body, params)
+
+    def get(path: String, authKey: String, body: Body = None, params: Params = Map.empty): Future[Response] =
+      makeRequest("GET", path, authKey, body, params)
+
+    def post(path: String, authKey: String, body: Body = None, params: Params = Map.empty): Future[Response] =
+      makeRequest("POST", path, authKey, body, params)
+
+    private def makeRequest(
       method: String,
-      key: String,
-      body: Option[String] = None,
-      params: Map[String,Option[String]] = Map.empty): Future[Response] = {
+      path: String,
+      authKey: String,
+      body: Body = None,
+      params: Params = Map.empty): Future[Response] = {
 
-      // We have a map of str,opt[str] and we need to convert it to
-      val filteredParams = params.filter(
-        // Filter out keys that are None
-        _._2.isDefined
-      ).map(
-        // Convert the remaining tuples to str,str
-        param => (param._1 -> param._2.get)
-      )
-
-      val uri = Uri(path = Path("/" + path), query = Query(filteredParams))
+      val uri = Uri(path = Path("/" + path), query = params2query(params))
 
       lastPath = Some(uri.toString)
-      lastKey = Some(key)
+      lastKey = Some(authKey)
 
       Future.successful { Response(200, "Ok") }
+    }
+
+    // Remove possible None values which Query.apply will not accept
+    private def params2query(params: Params): Query = {
+      val withValue = params.collect { case (key, Some(value)) => (key, value) }.toMap
+      Query(withValue)
     }
 
     def shutdown = {}

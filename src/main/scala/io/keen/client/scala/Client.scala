@@ -39,7 +39,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def addEvent(collection: String, event: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    httpAdapter.doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(event))
+    httpAdapter.post(path = path, authKey = settings.writeKey, body = Some(event))
   }
 
   /**
@@ -49,7 +49,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def addEvents(events: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
-    httpAdapter.doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(events))
+    httpAdapter.post(path = path, authKey = settings.writeKey, body = Some(events))
   }
 
   /**
@@ -244,7 +244,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def deleteCollection(collection: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    httpAdapter.doRequest(path = path, method = "DELETE", key = settings.masterKey)
+    httpAdapter.delete(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -252,7 +252,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def deleteProperty(collection: String, name: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
-    httpAdapter.doRequest(path = path, method = "DELETE", key = settings.masterKey)
+    httpAdapter.delete(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -260,7 +260,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getEvents: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -270,7 +270,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getCollection(collection: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -279,7 +279,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getProjects: Future[Response] = {
     val path = Seq(version, "projects").mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -288,7 +288,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getProject: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId).mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -296,7 +296,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getProperty(collection: String, name: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   /**
@@ -304,7 +304,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
    */
   def getQueries: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "queries").mkString("/")
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.get(path = path, authKey = settings.masterKey)
   }
 
   private def doQuery(
@@ -327,7 +327,7 @@ class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent
       "group_by" -> groupBy
     )
 
-    httpAdapter.doRequest(path = path, method = "GET", key = settings.readKey, params = params)
+    httpAdapter.get(path = path, authKey = settings.readKey, params = params)
   }
 
 
