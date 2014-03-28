@@ -18,15 +18,7 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
-libraryDependencies += "io.spray" % "spray-can" % "1.2.0"
-
-libraryDependencies += "io.spray" % "spray-http" % "1.2.0"
-
-libraryDependencies += "io.spray" % "spray-httpx" % "1.2.0"
-
-libraryDependencies += "io.spray" % "spray-util" % "1.2.0"
-
-libraryDependencies += "io.spray" % "spray-can" % "1.2.0"
+libraryDependencies += "io.spray" % "spray-client" % "1.2.0"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.2.4"
 

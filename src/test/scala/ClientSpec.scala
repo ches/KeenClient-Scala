@@ -14,14 +14,12 @@ import io.keen.client.scala._
 
 class ClientSpec extends Specification {
 
-  class OkHttpAdapter extends HttpAdapter {
+  class OkHttpAdapter(host: String, port: Int = 443) extends HttpAdapter {
 
-    var lastUrl: Option[String] = None
+    var lastPath: Option[String] = None
     var lastKey: Option[String] = None
 
     def doRequest(
-      scheme: String,
-      authority: String,
       path: String,
       method: String,
       key: String,
@@ -36,26 +34,14 @@ class ClientSpec extends Specification {
         // Convert the remaining tuples to str,str
         param => (param._1 -> param._2.get)
       )
-      // Make a Uri
-      val finalUrl = Uri(
-        scheme = scheme,
-        authority = Authority(host = Host(authority)),
-        path = Path("/" + path),
-        query = Query(filteredParams)
-      )
 
-      lastUrl = Some(finalUrl.toString)
+      val uri = Uri(path = Path("/" + path), query = Query(filteredParams))
+
+      lastPath = Some(uri.toString)
       lastKey = Some(key)
-      val p = Promise[Response]()
-      Future {
-        p.success(Response(200, "Ok"))
-      }
-      p.future
+
+      Future.successful { Response(200, "Ok") }
     }
-
-    def getKey = lastKey
-
-    def getUrl = lastUrl
 
     def shutdown = {}
   }
@@ -72,9 +58,10 @@ class ClientSpec extends Specification {
         "keen.read-key" -> "readKey",
         "keen.write-key" -> "writeKey"
       )
-    )
+    ).withFallback(ConfigFactory.load())
+
     val client = new Client(config = config) {
-      override val httpAdapter = new OkHttpAdapter
+      override val httpAdapter = new OkHttpAdapter(settings.apiHost)
     }
 
     val adapter = client.httpAdapter
@@ -89,57 +76,57 @@ class ClientSpec extends Specification {
       val res = Await.result(client.getProjects, Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle get project" in {
       val res = Await.result(client.getProject, Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle get event" in {
       val res = Await.result(client.getEvents, Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc/events")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc/events")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle get property" in {
       val res = Await.result(client.getProperty("foo", "bar"), Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc/events/foo/properties/bar")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc/events/foo/properties/bar")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle get collection" in {
       val res = Await.result(client.getCollection("foo"), Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc/events/foo")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc/events/foo")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle get collection (encoding)" in {
       val res = Await.result(client.getCollection("foo foo"), Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc/events/foo%20foo")
-      adapter.getKey.get must beEqualTo("masterKey")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc/events/foo%20foo")
+      adapter.lastKey.get must beEqualTo("masterKey")
     }
 
     "handle count query" in {
       val res = Await.result(client.count("foo"), Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      adapter.getUrl.get must beEqualTo("https://api.keen.io/3.0/projects/abc/queries/count?event_collection=foo")
+      adapter.lastPath.get must beEqualTo("/3.0/projects/abc/queries/count?event_collection=foo")
 
-      adapter.getKey.get must beEqualTo("readKey")
+      adapter.lastKey.get must beEqualTo("readKey")
     }
 
     // We'll test average thoroughly but since all the query method use the same underlying
@@ -156,10 +143,10 @@ class ClientSpec extends Specification {
       ), Duration(5, "second"))
 
       res.statusCode must beEqualTo(200)
-      var url = adapter.getUrl.get
+      var url = adapter.lastPath.get
 
       // Test for these with contains because who knows what order they'll be in
-      url must contain("https://api.keen.io/3.0/projects/abc/queries/average?")
+      url must contain("/3.0/projects/abc/queries/average?")
       url must contain("event_collection=foo+foo%E2%9D%96")
       url must contain("target_property=bar")
       url must contain("filters=%5B%7B%22property_name%22:+%22baz%22,%22operator%22:%22eq%22,%22property_value%22:%22gorch%22%7D%5D")
@@ -167,7 +154,7 @@ class ClientSpec extends Specification {
       url must contain("timezone=America/Chicago")
       url must contain("group_by=foo.name")
 
-      adapter.getKey.get must beEqualTo("readKey")
+      adapter.lastKey.get must beEqualTo("readKey")
     }
 
     "shutdown" in {

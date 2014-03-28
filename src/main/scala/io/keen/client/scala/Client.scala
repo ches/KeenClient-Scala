@@ -14,6 +14,10 @@ import grizzled.slf4j.Logging
 class Settings(config: Config) {
   config.checkValid(ConfigFactory.defaultReference(), "keen")
 
+  val apiHost    = config.getString("keen.api-host")
+  val apiPort    = config.getInt("keen.api-port")
+  val apiVersion = config.getString("keen.api-version")
+
   val masterKey = config.getString("keen.master-key")
   val projectId = config.getString("keen.project-id")
   val readKey   = config.getString("keen.read-key")
@@ -21,14 +25,11 @@ class Settings(config: Config) {
 }
 
 // XXX These should probably be Options with handling for missing ones below.
-class Client(
-  config: Config = ConfigFactory.load(),
-  scheme: String = "https",
-  authority: String = "api.keen.io",
-  version: String = "3.0") extends HttpAdapterComponent with Logging {
+class Client(config: Config = ConfigFactory.load()) extends HttpAdapterComponent with Logging {
 
-  val httpAdapter: HttpAdapter = new SprayHttpAdapter
   val settings = new Settings(config)
+  val httpAdapter: HttpAdapter = new SprayHttpAdapter(settings.apiHost, settings.apiPort)
+  val version = settings.apiVersion
 
   /**
    * Publish a single event. See [[https://keen.io/docs/api/reference/#event-collection-resource Event Collection Resource]].
@@ -38,7 +39,7 @@ class Client(
    */
   def addEvent(collection: String, event: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(event))
+    httpAdapter.doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(event))
   }
 
   /**
@@ -48,7 +49,7 @@ class Client(
    */
   def addEvents(events: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
-    doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(events))
+    httpAdapter.doRequest(path = path, method = "POST", key = settings.writeKey, body = Some(events))
   }
 
   /**
@@ -243,7 +244,7 @@ class Client(
    */
   def deleteCollection(collection: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "DELETE", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "DELETE", key = settings.masterKey)
   }
 
   /**
@@ -251,7 +252,7 @@ class Client(
    */
   def deleteProperty(collection: String, name: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
-    doRequest(path = path, method = "DELETE", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "DELETE", key = settings.masterKey)
   }
 
   /**
@@ -259,7 +260,7 @@ class Client(
    */
   def getEvents: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events").mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -269,7 +270,7 @@ class Client(
    */
   def getCollection(collection: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection).mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -278,7 +279,7 @@ class Client(
    */
   def getProjects: Future[Response] = {
     val path = Seq(version, "projects").mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -287,7 +288,7 @@ class Client(
    */
   def getProject: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId).mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -295,7 +296,7 @@ class Client(
    */
   def getProperty(collection: String, name: String): Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "events", collection, "properties", name).mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   /**
@@ -303,7 +304,7 @@ class Client(
    */
   def getQueries: Future[Response] = {
     val path = Seq(version, "projects", settings.projectId, "queries").mkString("/")
-    doRequest(path = path, method = "GET", key = settings.masterKey)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.masterKey)
   }
 
   private def doQuery(
@@ -326,17 +327,7 @@ class Client(
       "group_by" -> groupBy
     )
 
-    doRequest(path = path, method = "GET", key = settings.readKey, params = params)
-  }
-
-  private def doRequest(
-    path: String,
-    method: String,
-    key: String,
-    body: Option[String] = None,
-    params: Map[String,Option[String]] = Map.empty) = {
-
-    httpAdapter.doRequest(method = method, scheme = scheme, authority = authority, path = path, key = key, body = body, params = params)
+    httpAdapter.doRequest(path = path, method = "GET", key = settings.readKey, params = params)
   }
 
 
