@@ -1,5 +1,6 @@
 package io.keen.client.scala
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.ActorSystem
@@ -33,8 +34,8 @@ trait HttpAdapter {
 class SprayHttpAdapter(host: String, port: Int = 443) extends HttpAdapter with Logging {
 
   implicit val system = ActorSystem()
-  import system.dispatcher             // execution context for futures
-  implicit val timeout = Timeout(10)   // TODO: configurable
+  import system.dispatcher                   // execution context for futures
+  implicit val timeout = Timeout(6.seconds)  // TODO: configurable
 
   private val connectionSetup =
     Http.HostConnectorSetup(host, port = port, sslEncryption = true)
